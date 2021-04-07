@@ -1,21 +1,21 @@
-from multiprocessing import cpu_count, get_context
+from multiprocessing import Pool, cpu_count
 import numpy as np
 from functools import partial
 
 
 def parallelize_array_computation(func, *arrays, n_jobs=-1, **kwargs):
-    """
+    '''
     Chunk arrays into n_jobs blocks and compute func using a multiprocessing.Pool
-    """
+    '''
     if n_jobs == -1:
         n_jobs = cpu_count()
 
     if n_jobs == 1:
-        return [func(*arrays)]
+        return func(*arrays)
 
     n_elements = list(set(len(a) for a in arrays))
     if len(n_elements) > 1:
-        raise ValueError("All arays must have same length")
+        raise ValueError('All arays must have same length')
     n_elements = n_elements[0]
 
     blocks = []
@@ -25,8 +25,7 @@ def parallelize_array_computation(func, *arrays, n_jobs=-1, **kwargs):
         blocks.append([a[start:end] for a in arrays])
 
     func = partial(func, **kwargs)
-    ctx = get_context("spawn")
-    with ctx.Pool(n_jobs) as pool:
+    with Pool(n_jobs) as pool:
         result = pool.starmap(func, blocks)
 
     return result
